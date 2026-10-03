@@ -1,0 +1,148 @@
+{
+  "schema_version": "1.0.0",
+  "dataset": {
+    "accession": "BBBC006",
+    "version": "v1",
+    "citation": "We used the image set BBBC006v1 from the Broad Bioimage Benchmark Collection [Ljosa et al., Nature Methods, 2012]. DOI: 10.1038/nmeth.2083.",
+    "source_page": "https://bbbc.broadinstitute.org/BBBC006",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "method": {
+    "name": "mean-normalized squared 4-neighbor Laplacian energy",
+    "version": "0.1.0",
+    "parameters": {
+      "interior_only": true,
+      "min_pixel_variance": 1e-10,
+      "max_input_bytes": 8388608,
+      "max_pixels": 4000000,
+      "decoder": "Pillow 11.3.0"
+    },
+    "limitations": [
+      "The focus proxy can increase with deterministic noise, sharpening, contrast, or gain changes.",
+      "An encoded 16-bit TIFF range does not establish detector saturation or biological signal range.",
+      "No biological meaning, exclusion decision, atlas match, or specialist-model result is established.",
+      "Source URLs and acquisition metadata come from the manifest; this run verifies local bytes, not remote provenance."
+    ]
+  },
+  "images": [
+    {
+      "id": "a02_s1_w1_z16",
+      "label": "BBBC006v1 z16 nuclei channel",
+      "source_url": "https://data.broadinstitute.org/bbbc/BBBC006/BBBC006_v1_images_z_16.zip",
+      "source_member": "BBBC006_v1_images_z_16/mcf-z-stacks-03212011_a02_s1_w166fea8cb-8e72-4999-9f72-ee77bfdac65f.tif",
+      "source_byte_range": [
+        224354594,
+        224730736
+      ],
+      "sha256": "2808dd1f582832f8c2e906b8bd6316e1891acf4f69d577ae9d22f4aaa1ef82c5",
+      "bytes": 385490,
+      "field_id": "a02_s1",
+      "channel": "w1_Hoechst33342_nuclei",
+      "z_plane": "z16",
+      "metrics": {
+        "width": 696,
+        "height": 520,
+        "bit_depth": 16,
+        "mean_intensity": 0.002851704771,
+        "pixel_variance": 5.514944e-06,
+        "clipped_dark_fraction": 0.0,
+        "clipped_bright_fraction": 0.0,
+        "laplacian_variance": 2.56684e-07,
+        "focus_proxy": 0.031563799621
+      }
+    },
+    {
+      "id": "a02_s1_w1_z00",
+      "label": "BBBC006v1 z00 nuclei channel",
+      "source_url": "https://data.broadinstitute.org/bbbc/BBBC006/BBBC006_v1_images_z_00.zip",
+      "source_member": "BBBC006_v1_images_z_00/mcf-z-stacks-03212011_a02_s1_w1e1ad67bb-1e50-4666-a01e-cdadc4cee89d.tif",
+      "source_byte_range": [
+        347000250,
+        347417924
+      ],
+      "sha256": "8858cc695976c94943bff1bcb76320bd959b7c771941e6286274f43f5c3f5a0b",
+      "bytes": 423902,
+      "field_id": "a02_s1",
+      "channel": "w1_Hoechst33342_nuclei",
+      "z_plane": "z00",
+      "metrics": {
+        "width": 696,
+        "height": 520,
+        "bit_depth": 16,
+        "mean_intensity": 0.002881356147,
+        "pixel_variance": 1.493263e-06,
+        "clipped_dark_fraction": 0.0,
+        "clipped_bright_fraction": 0.0,
+        "laplacian_variance": 1.43409e-07,
+        "focus_proxy": 0.017273580964
+      }
+    }
+  ],
+  "interpretation_scope": "observable_image_quality",
+  "comparison": {
+    "status": "proxy_ranked",
+    "reason": "Matched field, channel, and dimensions support a relative proxy ranking. Exposure/gain equality is not independently verified when absent from source metadata.",
+    "higher_focus_proxy_image_id": "a02_s1_w1_z16"
+  },
+  "explanation": {
+    "claim": "For the supplied matched field and channel, a02_s1_w1_z16 has a higher measured focus proxy than a02_s1_w1_z00; this is a relative image-quality observation.",
+    "claim_type": "observable_image_quality",
+    "supporting_evidence": [
+      {
+        "image_id": "a02_s1_w1_z16",
+        "metric": "focus_proxy",
+        "value": 0.031563799621,
+        "pointer": "/images/0/metrics/focus_proxy",
+        "source_url": "https://data.broadinstitute.org/bbbc/BBBC006/BBBC006_v1_images_z_16.zip"
+      },
+      {
+        "image_id": "a02_s1_w1_z00",
+        "metric": "focus_proxy",
+        "value": 0.017273580964,
+        "pointer": "/images/1/metrics/focus_proxy",
+        "source_url": "https://data.broadinstitute.org/bbbc/BBBC006/BBBC006_v1_images_z_00.zip"
+      }
+    ],
+    "counter_evidence": [
+      {
+        "observation": "Noise and processing can raise this proxy without improved focus.",
+        "pointer": "/method/limitations/0"
+      },
+      {
+        "observation": "No biological interpretation follows from image sharpness.",
+        "pointer": "/method/limitations/2"
+      },
+      {
+        "observation": "Source metadata is supplied by the manifest rather than checked against the archive at run time.",
+        "pointer": "/method/limitations/3"
+      }
+    ],
+    "uncertainty": {
+      "level": "limited",
+      "reason": "Matched field, channel, and dimensions support a relative proxy ranking. Exposure/gain equality is not independently verified when absent from source metadata."
+    }
+  },
+  "human_review_required": true,
+  "human_decision": {
+    "status": "pending",
+    "options": [
+      "keep",
+      "exclude",
+      "reacquire",
+      "uncertain"
+    ],
+    "rationale": null
+  },
+  "biological_assessment": {
+    "status": "abstain",
+    "reason": "No independent biological evidence was supplied."
+  },
+  "atlas": {
+    "status": "not_configured",
+    "evidence": []
+  },
+  "specialist_model": {
+    "status": "not_configured",
+    "evidence": []
+  }
+}

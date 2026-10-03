@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/szl-holdings/szl-microscopy-pilot/blob/main/schemas/explanation.schema.json",
+  "title": "Microscopy pilot image-quality explanation",
+  "description": "A bounded, deterministic QC report. The schema constrains the kinds of claims a report may make; image-source integrity and semantic agreement with measurements must also be checked by the producer or reviewer.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset",
+    "method",
+    "images",
+    "comparison",
+    "interpretation_scope",
+    "explanation",
+    "human_review_required",
+    "human_decision",
+    "biological_assessment",
+    "atlas",
+    "specialist_model"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accession", "version", "citation", "source_page", "license_url"],
+      "properties": {
+        "accession": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "citation": { "type": "string", "minLength": 1 },
+        "source_page": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "license_url": { "type": "string", "format": "uri", "pattern": "^https://" }
+      }
+    },
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "parameters", "limitations"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": ["string", "number", "integer", "boolean", "null"]
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "images": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "source_url", "sha256", "bytes", "metrics"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+          "label": { "type": "string", "minLength": 1 },
+          "source_url": { "type": "string", "format": "uri", "pattern": "^https://" },
+          "source_member": { "type": "string", "minLength": 1 },
+          "source_byte_range": {
+            "type": "array",
+            "prefixItems": [
+              { "type": "integer", "minimum": 0 },
+              { "type": "integer", "minimum": 0 }
+            ],
+            "items": false,
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "Inclusive byte range of the source archive, if recorded."
+          },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "bytes": { "type": "integer", "minimum": 1 },
+          "field_id": { "type": "string", "minLength": 1 },
+          "channel": { "type": "string", "minLength": 1 },
+          "z_plane": { "type": "string", "minLength": 1 },
+          "exposure_ms": { "type": "number", "exclusiveMinimum": 0 },
+          "gain": { "type": "number", "exclusiveMinimum": 0 },
+          "processing": { "type": "string", "minLength": 1 },
+          "metrics": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "width",
+              "height",
+              "bit_depth",
+              "mean_intensity",
+              "pixel_variance",
+              "clipped_dark_fraction",
+              "clipped_bright_fraction",
+              "laplacian_variance",
+              "focus_proxy"
+            ],
+            "properties": {
+              "width": { "type": "integer", "minimum": 1 },
+              "height": { "type": "integer", "minimum": 1 },
+              "bit_depth": { "enum": [8, 16] },
+              "mean_intensity": { "type": "number", "minimum": 0, "maximum": 1 },
+              "pixel_variance": { "type": "number", "minimum": 0 },
+              "clipped_dark_fraction": { "type": "number", "minimum": 0, "maximum": 1 },
+              "clipped_bright_fraction": { "type": "number", "minimum": 0, "maximum": 1 },
+              "laplacian_variance": { "type": "number", "minimum": 0 },
+              "focus_proxy": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Dimensionless mean squared interior four-neighbor Laplacian divided by squared mean pixel intensity."
+              }
+            }
+          }
+        }
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason", "higher_focus_proxy_image_id"],
+      "properties": {
+        "status": {
+          "enum": ["proxy_ranked", "not_comparable", "insufficient_texture", "not_requested"]
+        },
+        "reason": { "type": "string", "minLength": 1 },
+        "higher_focus_proxy_image_id": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Za-z0-9_-]+$"
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "proxy_ranked" } } },
+          "then": { "properties": { "higher_focus_proxy_image_id": { "type": "string" } } },
+          "else": { "properties": { "higher_focus_proxy_image_id": { "type": "null" } } }
+        }
+      ]
+    },
+    "interpretation_scope": { "const": "observable_image_quality" },
+    "explanation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim",
+        "claim_type",
+        "supporting_evidence",
+        "counter_evidence",
+        "uncertainty"
+      ],
+      "properties": {
+        "claim": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A producer-controlled statement limited to the measured image-quality quantities. Free text needs semantic review; this schema alone cannot prove the statement true."
+        },
+        "claim_type": { "const": "observable_image_quality" },
+        "supporting_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["image_id", "metric", "value", "pointer", "source_url"],
+            "properties": {
+              "image_id": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+              "metric": {
+                "enum": [
+                  "width",
+                  "height",
+                  "bit_depth",
+                  "mean_intensity",
+                  "pixel_variance",
+                  "clipped_dark_fraction",
+                  "clipped_bright_fraction",
+                  "laplacian_variance",
+                  "focus_proxy"
+                ]
+              },
+              "value": { "type": "number", "minimum": 0 },
+              "pointer": {
+                "type": "string",
+                "pattern": "^/images/[0-9]+/metrics/(width|height|bit_depth|mean_intensity|pixel_variance|clipped_dark_fraction|clipped_bright_fraction|laplacian_variance|focus_proxy)$"
+              },
+              "source_url": { "type": "string", "format": "uri", "pattern": "^https://" }
+            }
+          }
+        },
+        "counter_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["observation", "pointer"],
+            "properties": {
+              "observation": { "type": "string", "minLength": 1 },
+              "pointer": { "type": "string", "pattern": "^/" }
+            }
+          }
+        },
+        "uncertainty": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["level", "reason"],
+          "properties": {
+            "level": { "enum": ["low", "moderate", "high", "limited", "unknown"] },
+            "reason": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "human_review_required": { "const": true },
+    "human_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "options", "rationale"],
+      "properties": {
+        "status": { "const": "pending" },
+        "options": {
+          "const": ["keep", "exclude", "reacquire", "uncertain"],
+          "description": "Possible researcher choices. The program never chooses one."
+        },
+        "rationale": { "const": null }
+      }
+    },
+    "biological_assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason"],
+      "properties": {
+        "status": { "const": "abstain" },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "atlas": { "$ref": "#/$defs/unconfiguredCapability" },
+    "specialist_model": { "$ref": "#/$defs/unconfiguredCapability" }
+  },
+  "$defs": {
+    "unconfiguredCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidence"],
+      "properties": {
+        "status": { "const": "not_configured" },
+        "evidence": { "const": [] }
+      }
+    }
+  }
+}

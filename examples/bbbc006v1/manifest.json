@@ -1,0 +1,41 @@
+{
+  "dataset": {
+    "accession": "BBBC006",
+    "version": "v1",
+    "citation": "We used the image set BBBC006v1 from the Broad Bioimage Benchmark Collection [Ljosa et al., Nature Methods, 2012]. DOI: 10.1038/nmeth.2083.",
+    "source_page": "https://bbbc.broadinstitute.org/BBBC006",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "images": [
+    {
+      "id": "a02_s1_w1_z16",
+      "path": "images/mcf-z-stacks-03212011_a02_s1_w166fea8cb-8e72-4999-9f72-ee77bfdac65f.tif",
+      "source_url": "https://data.broadinstitute.org/bbbc/BBBC006/BBBC006_v1_images_z_16.zip",
+      "source_member": "BBBC006_v1_images_z_16/mcf-z-stacks-03212011_a02_s1_w166fea8cb-8e72-4999-9f72-ee77bfdac65f.tif",
+      "source_byte_range": [224354594, 224730736],
+      "sha256": "2808dd1f582832f8c2e906b8bd6316e1891acf4f69d577ae9d22f4aaa1ef82c5",
+      "bytes": 385490,
+      "label": "BBBC006v1 z16 nuclei channel",
+      "field_id": "a02_s1",
+      "channel": "w1_Hoechst33342_nuclei",
+      "z_plane": "z16"
+    },
+    {
+      "id": "a02_s1_w1_z00",
+      "path": "images/mcf-z-stacks-03212011_a02_s1_w1e1ad67bb-1e50-4666-a01e-cdadc4cee89d.tif",
+      "source_url": "https://data.broadinstitute.org/bbbc/BBBC006/BBBC006_v1_images_z_00.zip",
+      "source_member": "BBBC006_v1_images_z_00/mcf-z-stacks-03212011_a02_s1_w1e1ad67bb-1e50-4666-a01e-cdadc4cee89d.tif",
+      "source_byte_range": [347000250, 347417924],
+      "sha256": "8858cc695976c94943bff1bcb76320bd959b7c771941e6286274f43f5c3f5a0b",
+      "bytes": 423902,
+      "label": "BBBC006v1 z00 nuclei channel",
+      "field_id": "a02_s1",
+      "channel": "w1_Hoechst33342_nuclei",
+      "z_plane": "z00"
+    }
+  ],
+  "claim": "observable_quality_only",
+  "atlas": {"configured": false},
+  "specialist_model": {"configured": false},
+  "comparison": {"requested": true}
+}

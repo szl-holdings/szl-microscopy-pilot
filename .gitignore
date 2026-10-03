@@ -1,0 +1,7 @@
+.venv/
+.clean-venv-final/
+.uv-cache/
+__pycache__/
+*.py[cod]
+/report.json
+*.tmp
