@@ -138,9 +138,9 @@ def _measure_image(path: Path) -> dict[str, Any]:
         import PIL
         from PIL import Image, UnidentifiedImageError
     except ImportError as exc:
-        raise PilotError("Pillow==11.3.0 is required; install the pinned dependency") from exc
-    if PIL.__version__ != "11.3.0":
-        raise PilotError("the reproducible run requires Pillow==11.3.0")
+        raise PilotError("Pillow==12.3.0 is required; install the pinned dependency") from exc
+    if PIL.__version__ != "12.3.0":
+        raise PilotError("the reproducible run requires Pillow==12.3.0")
     try:
         with Image.open(path) as im:
             if im.format not in {"PNG", "TIFF"} or getattr(im, "n_frames", 1) != 1:
@@ -262,7 +262,7 @@ def run(manifest_path: Path, output_path: Path | None = None) -> dict[str, Any]:
             "version": __version__,
             "parameters": {"interior_only": True, "min_pixel_variance": MIN_PIXEL_VARIANCE,
                            "max_input_bytes": MAX_INPUT_BYTES, "max_pixels": MAX_PIXELS,
-                           "decoder": "Pillow 11.3.0"},
+                           "decoder": "Pillow 12.3.0"},
             "limitations": limitations,
         },
         "images": images,
