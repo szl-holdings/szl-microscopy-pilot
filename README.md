@@ -10,7 +10,7 @@ From the repository root, with [uv](https://docs.astral.sh/uv/) available:
 uv --cache-dir .uv-cache run --locked python -m microscopy_pilot run --manifest examples/bbbc006v1/manifest.json --out report.json
 ```
 
-The command verifies the local source files before measurement and writes `report.json`. It uses Python 3.9 or newer and Pillow 11.3.0. To check the source files without producing a report:
+The command verifies the local source files before measurement and writes `report.json`. It uses Python 3.10 or newer and Pillow 12.3.0. To check the source files without producing a report:
 
 ```sh
 uv --cache-dir .uv-cache run --locked python -m microscopy_pilot verify --manifest examples/bbbc006v1/manifest.json
@@ -46,7 +46,7 @@ Please cite the source as recommended by the collection: “We used the image se
 
 `examples/bbbc006v1/manifest.json` is the input record. Preserve its source and license fields, exact byte counts, and SHA-256 hashes when sharing a report. A changed or damaged file must fail verification rather than silently producing new measurements. The run verifies local bytes; source URLs and acquisition metadata are recorded from the manifest and are not independently checked against the remote archive on each run. The report contains the method version, decoder, and parameters so a later run can be compared with the same algorithm. For another sample, provide verified metadata and permission, then use the same schema to keep observations separate from biological interpretation.
 
-The checked-in [example report](examples/bbbc006v1/report.json) is the reference output. To regenerate the static HTML view from that report and the original TIFFs:
+The checked-in [example report](examples/bbbc006v1/report.json) is the reference output. It retains its original Pillow 11.3.0 decoder provenance. The Pillow 12.3.0 compatibility test verifies identical image measurements and report fields except for the newly reported decoder version; it does not rewrite that historical report. To regenerate the static HTML view from that report and the original TIFFs:
 
 ```sh
 uv --cache-dir .uv-cache run --locked python -m tools.build_worked_report
