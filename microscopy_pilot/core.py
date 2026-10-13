@@ -150,14 +150,14 @@ def _measure_image(path: Path) -> dict[str, Any]:
                 raise PilotError("image dimensions exceed the bounded QC limits")
             if im.mode in {"I;16", "I;16L", "I;16B"}:
                 bit_depth = 16
-                pixels = [p / 65535.0 for p in im.getdata()]
+                pixels = [p / 65535.0 for p in im.get_flattened_data()]
             elif im.mode == "L":
                 bit_depth = 8
-                pixels = [p / 255.0 for p in im.getdata()]
+                pixels = [p / 255.0 for p in im.get_flattened_data()]
             elif im.mode == "RGB":
                 bit_depth = 8
                 pixels = [(2126 * r + 7152 * g + 722 * b) / 2_550_000.0
-                          for r, g, b in im.getdata()]
+                          for r, g, b in im.get_flattened_data()]
             else:
                 raise PilotError(f"unsupported image mode: {im.mode}")
     except PilotError:
