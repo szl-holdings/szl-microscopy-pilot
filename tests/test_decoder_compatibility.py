@@ -34,7 +34,15 @@ class DecoderCompatibilityTests(unittest.TestCase):
             rgb = Path(tmp) / "rgb.png"
             Image.new("L", (5, 4), 17).save(gray)
             Image.new("RGB", (5, 4), (40, 90, 200)).save(rgb)
-            with warnings.catch_warnings():
+            # Neither the deprecated API nor its eager full-image replacement
+            # may be used: all supported modes must use bounded pixel access.
+            with warnings.catch_warnings(), patch.object(
+                Image.Image, "get_flattened_data",
+                side_effect=AssertionError("full-image pixel tuple allocation"),
+            ), patch.object(
+                Image.Image, "getdata",
+                side_effect=AssertionError("deprecated pixel API"),
+            ):
                 warnings.simplefilter("error", DeprecationWarning)
                 run(MANIFEST)  # native 16-bit TIFF example
                 self.assertEqual(_measure_image(gray)["bit_depth"], 8)

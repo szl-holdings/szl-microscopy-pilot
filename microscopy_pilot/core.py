@@ -148,16 +148,21 @@ def _measure_image(path: Path) -> dict[str, Any]:
             width, height = im.size
             if width < 3 or height < 3 or width * height > MAX_PIXELS:
                 raise PilotError("image dimensions exceed the bounded QC limits")
+            # PixelAccess reads one pixel at a time. Pillow's replacement
+            # get_flattened_data() materializes an additional full-image tuple,
+            # which exceeds the worker memory budget for large RGB inputs.
+            access = im.load()
+            pixels_iter = (access[x, y] for y in range(im.height) for x in range(im.width))
             if im.mode in {"I;16", "I;16L", "I;16B"}:
                 bit_depth = 16
-                pixels = [p / 65535.0 for p in im.get_flattened_data()]
+                pixels = [p / 65535.0 for p in pixels_iter]
             elif im.mode == "L":
                 bit_depth = 8
-                pixels = [p / 255.0 for p in im.get_flattened_data()]
+                pixels = [p / 255.0 for p in pixels_iter]
             elif im.mode == "RGB":
                 bit_depth = 8
                 pixels = [(2126 * r + 7152 * g + 722 * b) / 2_550_000.0
-                          for r, g, b in im.get_flattened_data()]
+                          for r, g, b in pixels_iter]
             else:
                 raise PilotError(f"unsupported image mode: {im.mode}")
     except PilotError:
