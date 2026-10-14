@@ -148,9 +148,14 @@ def _measure_image(path: Path) -> dict[str, Any]:
             width, height = im.size
             if width < 3 or height < 3 or width * height > MAX_PIXELS:
                 raise PilotError("image dimensions exceed the bounded QC limits")
-            # PixelAccess reads one pixel at a time. Pillow's replacement
-            # get_flattened_data() materializes an additional full-image tuple,
-            # which exceeds the worker memory budget for large RGB inputs.
+            if im.mode not in {"I;16", "I;16L", "I;16B", "L", "RGB"}:
+                raise PilotError(f"unsupported image mode: {im.mode}")
+            # Format, frame count, dimensions and mode come from the header and
+            # are all admitted above, before any pixel decode. PixelAccess then
+            # reads each coordinate once in row-major order, so no full-image
+            # raw pixel tuple (getdata/get_flattened_data/tobytes) is built.
+            # The normalized `pixels` list below is still O(N) result storage;
+            # no RSS or out-of-memory improvement is measured or claimed here.
             access = im.load()
             pixels_iter = (access[x, y] for y in range(im.height) for x in range(im.width))
             if im.mode in {"I;16", "I;16L", "I;16B"}:
