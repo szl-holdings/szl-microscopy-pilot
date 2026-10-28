@@ -20,10 +20,10 @@ MANIFEST = ROOT / "examples/bbbc006v1/manifest.json"
 
 class DecoderCompatibilityTests(unittest.TestCase):
     def test_pinned_decoder_preserves_native_example_measurements(self):
-        self.assertEqual(PIL.__version__, "12.3.0")
+        self.assertEqual(PIL.__version__, "13.0.0")
         historical = json.loads((ROOT / "examples/bbbc006v1/report.json").read_text())
         expected = copy.deepcopy(historical)
-        expected["method"]["parameters"]["decoder"] = "Pillow 12.3.0"
+        expected["method"]["parameters"]["decoder"] = "Pillow 13.0.0"
         self.assertEqual(run(MANIFEST), expected)
 
     def test_supported_decode_paths_emit_no_deprecation_warnings(self):
@@ -66,7 +66,7 @@ class DecoderCompatibilityTests(unittest.TestCase):
 
     def test_an_unqualified_decoder_version_still_fails_closed(self):
         with patch.object(PIL, "__version__", "11.3.0"):
-            with self.assertRaisesRegex(PilotError, "requires Pillow==12.3.0"):
+            with self.assertRaisesRegex(PilotError, "requires Pillow==13.0.0"):
                 run(MANIFEST)
 
 
