@@ -209,11 +209,56 @@ class DecodeAdmissionTests(unittest.TestCase):
         ]
         for declared, refusal in cases:
             manifest = self._manifest_with(over, declared)
+            original_open = Path.open
+
+            def refuse_image_open(path, *args, **kwargs):
+                if path == self.root / "input.png":
+                    raise AssertionError("encoded input opened")
+                return original_open(path, *args, **kwargs)
+
             with self.subTest(declared=declared), patch.object(
-                Path, "read_bytes", side_effect=AssertionError("encoded input read"),
+                Path, "open", refuse_image_open,
             ), _forbid_pixel_decode():
                 with self.assertRaisesRegex(PilotError, refusal):
                     run(manifest)
+
+    def test_growth_after_stat_cannot_trigger_an_unbounded_read(self) -> None:
+        initial = b"synthetic bounded read input"
+        manifest = self._manifest_with(initial, len(initial))
+        image_path = self.root / "input.png"
+        original_open = Path.open
+        reads = []
+
+        class RecordingReader:
+            def __init__(self, stream):
+                self.stream = stream
+
+            def __enter__(self):
+                self.stream.__enter__()
+                return self
+
+            def __exit__(self, *args):
+                return self.stream.__exit__(*args)
+
+            def read(self, size=-1):
+                data = self.stream.read(size)
+                reads.append((size, len(data)))
+                return data
+
+        def grow_before_open(path, *args, **kwargs):
+            if path == image_path:
+                # The stat size check has passed; grow the real file before the
+                # read. The test measures the actual request and returned bytes.
+                with original_open(path, "ab") as writer:
+                    writer.write(initial * 3)
+                return RecordingReader(original_open(path, *args, **kwargs))
+            return original_open(path, *args, **kwargs)
+
+        with patch.object(Path, "open", grow_before_open), _forbid_pixel_decode():
+            with self.assertRaisesRegex(PilotError, "byte count mismatch"):
+                run(manifest)
+
+        self.assertEqual(reads, [(len(initial) + 1, len(initial) + 1)])
 
     def test_eight_mib_boundary_is_admitted_to_the_decoder(self) -> None:
         # Passing control: exactly MAX_INPUT_BYTES is read, hashed and handed to
