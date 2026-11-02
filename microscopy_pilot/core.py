@@ -7,6 +7,7 @@ biology, choose data exclusions, or perform atlas/model calls.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import math
 import re
@@ -124,7 +125,10 @@ def _read_verified_image(item: dict[str, Any], root: Path) -> dict[str, Any]:
         if key in item and (isinstance(item[key], bool) or not isinstance(item[key], (int, float))
                             or not math.isfinite(item[key]) or item[key] <= 0):
             raise PilotError(f"image.{key} must be a positive finite number")
-    metrics = _measure_image(path)
+    # Measure the exact bytes that passed the size and digest gates. Reopening
+    # the path would allow a concurrent replacement to change the pixels while
+    # the report still records the previously verified digest.
+    metrics = _measure_image(path, verified_data=data)
     result = {key: item[key] for key in (
         "id", "label", "source_url", "source_member", "source_byte_range", "sha256", "bytes",
         "field_id", "channel", "z_plane", "exposure_ms", "gain", "processing",
@@ -133,7 +137,7 @@ def _read_verified_image(item: dict[str, Any], root: Path) -> dict[str, Any]:
     return result
 
 
-def _measure_image(path: Path) -> dict[str, Any]:
+def _measure_image(path: Path, *, verified_data: bytes | None = None) -> dict[str, Any]:
     try:
         import PIL
         from PIL import Image, UnidentifiedImageError
@@ -142,7 +146,8 @@ def _measure_image(path: Path) -> dict[str, Any]:
     if PIL.__version__ != "13.0.0":
         raise PilotError("the reproducible run requires Pillow==13.0.0")
     try:
-        with Image.open(path) as im:
+        source = io.BytesIO(verified_data) if verified_data is not None else path
+        with Image.open(source) as im:
             if im.format not in {"PNG", "TIFF"} or getattr(im, "n_frames", 1) != 1:
                 raise PilotError("only single-frame PNG or TIFF images are supported")
             width, height = im.size
