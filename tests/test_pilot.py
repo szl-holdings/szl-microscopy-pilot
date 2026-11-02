@@ -14,6 +14,7 @@ import unittest
 import zlib
 from pathlib import Path
 from typing import Callable
+from unittest.mock import patch
 
 from microscopy_pilot.core import PilotError, run
 
@@ -156,6 +157,28 @@ class PilotRunTests(unittest.TestCase):
         self.manifest["images"][0]["sha256"] = "0" * 64
         with self.assertRaisesRegex(PilotError, "SHA-256 mismatch"):
             self._run()
+
+    def test_measurement_uses_verified_bytes_after_file_replacement(self) -> None:
+        # Simulate a writer replacing the image after the verification read.
+        # The receipt hash and measured pixels must describe the same snapshot.
+        image_path = self.root / "synthetic.png"
+        replacement = _gray_png(width=9, height=8, pixel=lambda _x, _y: 128)
+        read_bytes = Path.read_bytes
+
+        def read_then_replace(path):
+            data = read_bytes(path)
+            if path == image_path:
+                path.write_bytes(replacement)
+            return data
+
+        with patch.object(Path, "read_bytes", read_then_replace):
+            report = self._run()
+
+        image = report["images"][0]
+        self.assertEqual(image["sha256"], hashlib.sha256(self.image_bytes).hexdigest())
+        self.assertEqual(image["metrics"]["width"], 8)
+        self.assertGreater(image["metrics"]["pixel_variance"], 0)
+        self.assertEqual(image_path.read_bytes(), replacement)
 
     def test_corrupt_png_is_rejected_even_with_matching_hash(self) -> None:
         corrupt = b"not a PNG image"
