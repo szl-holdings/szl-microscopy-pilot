@@ -159,19 +159,18 @@ class PilotRunTests(unittest.TestCase):
             self._run()
 
     def test_measurement_uses_verified_bytes_after_file_replacement(self) -> None:
-        # Simulate a writer replacing the image after the verification read.
+        # Replace the file at the native decoder boundary, after verification.
         # The receipt hash and measured pixels must describe the same snapshot.
         image_path = self.root / "synthetic.png"
         replacement = _gray_png(width=9, height=8, pixel=lambda _x, _y: 128)
-        read_bytes = Path.read_bytes
+        from PIL import Image
+        image_open = Image.open
 
-        def read_then_replace(path):
-            data = read_bytes(path)
-            if path == image_path:
-                path.write_bytes(replacement)
-            return data
+        def open_after_replace(source, *args, **kwargs):
+            image_path.write_bytes(replacement)
+            return image_open(source, *args, **kwargs)
 
-        with patch.object(Path, "read_bytes", read_then_replace):
+        with patch.object(Image, "open", open_after_replace):
             report = self._run()
 
         image = report["images"][0]

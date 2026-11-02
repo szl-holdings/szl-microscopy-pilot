@@ -103,7 +103,10 @@ def _read_verified_image(item: dict[str, Any], root: Path) -> dict[str, Any]:
     try:
         if path.stat().st_size != expected_bytes:
             raise PilotError(f"byte count mismatch for {item['id']}")
-        data = path.read_bytes()
+        # Bound the read itself: the file can grow after the stat check.
+        # One extra byte is enough to detect a length mismatch.
+        with path.open("rb") as stream:
+            data = stream.read(expected_bytes + 1)
     except OSError as exc:
         raise PilotError(f"cannot read image {item['id']}: {exc}") from exc
     if len(data) != expected_bytes:
