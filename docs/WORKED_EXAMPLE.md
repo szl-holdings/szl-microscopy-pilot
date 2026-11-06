@@ -14,7 +14,7 @@ From the repository root:
 uv --cache-dir .uv-cache run --locked python -m microscopy_pilot run --manifest examples/bbbc006v1/manifest.json --out report.json
 ```
 
-The program first checks file presence, byte lengths, hashes, decoding, and required metadata. It then writes `report.json` locally. A checked-in [reference report](../examples/bbbc006v1/report.json) records this run. A mismatch is an error, not a low-quality image result. Source URLs and acquisition metadata come from the manifest; this command verifies local bytes, not the remote archive again.
+The program first checks file presence, byte lengths, hashes, decoding, and required metadata. It then writes `report.json` locally. A checked-in [reference report](../examples/bbbc006v1/report.json) records this run. Its `method.parameters.decoder` still names Pillow 11.3.0, the decoder that produced it; a current run reports Pillow 13.0.0 with identical measurements. A mismatch is an error, not a low-quality image result. Source URLs and acquisition metadata come from the manifest; this command verifies local bytes, not the remote archive again.
 
 ## Minute 3: read the measurements
 
@@ -32,7 +32,7 @@ The `explanation.supporting_evidence` entries give image IDs, measured values, s
 
 Look at both images and consider the assay protocol and whether the field is usable. A researcher may choose **keep**, **exclude**, **reacquire**, or **uncertain**, and record a rationale outside the automatically generated report. The software leaves `human_decision.status` at `pending` and never excludes an image on its own.
 
-For a readable view of the example, open [`worked_report.html`](worked_report.html). It embeds display-only previews from the original TIFFs, using a shared linear mapping from encoded 0 to the pair's pooled 99.9th-percentile value of 1110; values above 1110 clip in the preview. The preview transform has no effect on the raw-pixel measurements. The static page, JSON report, and manifest can be regenerated and checked locally.
+For a readable view of the example, open [`worked_report.html`](worked_report.html). It embeds display-only previews from the original TIFFs, using a shared linear mapping from encoded 0 to the pair's pooled 99.9th-percentile value of 1110; values above 1110 clip in the preview. The preview transform has no effect on the raw-pixel measurements. The static page, JSON report, and manifest can be regenerated and checked locally; `python -m tools.build_worked_report --check` confirms that the committed page matches a rebuild.
 
 ### Why the result is limited
 
