@@ -5,17 +5,31 @@ two TIFF hashes, then embeds 8-bit *display-only* PNG previews. Both previews
 use one linear scale: black is encoded value 0 and white is the pooled 99.9th
 percentile of the two original TIFFs. Values above white clip in the preview.
 All reported QC metrics are calculated from the original TIFFs, never previews.
+
+The checked-in report keeps the decoder provenance of the run that produced it
+(see README). A fresh run must reproduce every other field exactly; only
+``method.parameters.decoder`` may name the currently pinned decoder instead.
+
+Run from the repository root::
+
+    python -m tools.build_worked_report           # rewrite docs/worked_report.html
+    python -m tools.build_worked_report --check   # exit 1 if that page is stale
 """
 
 from __future__ import annotations
 
+import argparse
 import base64
+import copy
 import hashlib
 import html
 import io
 import json
+import re
+import sys
 from pathlib import Path
 from string import Template
+from typing import Any
 
 from PIL import Image
 
@@ -26,6 +40,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "examples" / "bbbc006v1" / "manifest.json"
 REPORT = ROOT / "examples" / "bbbc006v1" / "report.json"
 OUTPUT = ROOT / "docs" / "worked_report.html"
+PNG_DATA_URI = re.compile(r"data:image/png;base64,([A-Za-z0-9+/=]+)")
 
 
 def _escape(value: object) -> str:
@@ -40,28 +55,67 @@ def _preview(values: list[int], size: tuple[int, int], white: int) -> str:
     return base64.b64encode(stream.getvalue()).decode("ascii")
 
 
-def main() -> None:
-    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
-    recorded = json.loads(REPORT.read_text(encoding="utf-8"))
-    fresh = run(MANIFEST)
-    if fresh != recorded:
+def check_recorded_report(fresh: dict[str, Any], recorded: dict[str, Any]) -> None:
+    """Refuse a checked-in report that a fresh verified run does not reproduce.
+
+    This is the rule tests/test_decoder_compatibility.py pins: the recorded
+    report may name the decoder that produced it, and every other field,
+    including every measurement, must match the fresh run exactly.
+    """
+    try:
+        recorded_decoder = recorded["method"]["parameters"]["decoder"]
+        fresh_decoder = fresh["method"]["parameters"]["decoder"]
+    except (KeyError, TypeError) as exc:
+        raise ValueError("Report has no method.parameters.decoder provenance") from exc
+    if not isinstance(recorded_decoder, str) or not recorded_decoder.strip():
+        raise ValueError("Checked-in report has no method.parameters.decoder provenance")
+    expected = copy.deepcopy(recorded)
+    expected["method"]["parameters"]["decoder"] = fresh_decoder
+    if fresh != expected:
         raise ValueError("Checked-in report differs from a fresh verified run")
+
+
+def page_fingerprint(page: str) -> str:
+    """Return the page text with each embedded PNG replaced by its pixel digest.
+
+    PNG compression bytes can change with the zlib build that encodes them; the
+    decoded preview pixels and every other byte of the page cannot.
+    """
+    def pixels(match: re.Match[str]) -> str:
+        with Image.open(io.BytesIO(base64.b64decode(match[1], validate=True))) as image:
+            image.load()
+            digest = hashlib.sha256(
+                f"{image.mode}:{image.width}x{image.height}:".encode("ascii") + image.tobytes()
+            ).hexdigest()
+        return f"data:image/png;pixels-sha256,{digest}"
+
+    return PNG_DATA_URI.sub(pixels, page)
+
+
+def render(manifest_path: Path = MANIFEST, report_path: Path = REPORT) -> tuple[str, int]:
+    """Return the HTML page and its shared display white level."""
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    recorded = json.loads(report_path.read_text(encoding="utf-8"))
+    check_recorded_report(run(manifest_path), recorded)
     if len(recorded["images"]) != 2 or recorded["comparison"]["status"] != "proxy_ranked":
         raise ValueError("Worked HTML requires the verified ranked BBBC006 pair")
 
     original: list[tuple[dict, list[int], tuple[int, int]]] = []
     all_values: list[int] = []
     for item, measured in zip(manifest["images"], recorded["images"]):
-        path = (MANIFEST.parent / item["path"]).resolve()
-        raw = path.read_bytes()
+        path = (manifest_path.parent / item["path"]).resolve()
+        # Bounded read, as in microscopy_pilot.core: one extra byte exposes growth.
+        with path.open("rb") as stream:
+            raw = stream.read(item["bytes"] + 1)
         if len(raw) != item["bytes"] or hashlib.sha256(raw).hexdigest() != item["sha256"]:
             raise ValueError(f"Source bytes changed: {path.name}")
         if item["id"] != measured["id"]:
             raise ValueError("Manifest/report image order differs")
-        with Image.open(path) as source:
+        # Preview the exact bytes that passed the hash check, not a reread path.
+        with Image.open(io.BytesIO(raw)) as source:
             if source.mode not in {"I;16", "I;16L", "I;16B"}:
                 raise ValueError("Expected 16-bit native TIFF")
-            values = list(source.getdata())
+            values = list(source.get_flattened_data())
             size = source.size
         if size != (measured["metrics"]["width"], measured["metrics"]["height"]):
             raise ValueError("Source/report dimensions differ")
@@ -220,9 +274,39 @@ def main() -> None:
         citation=_escape(recorded["dataset"]["citation"]),
         sources_html="".join(sources_html),
     )
-    OUTPUT.write_bytes(page.encode("utf-8"))
-    print(f"{OUTPUT}: {len(page.encode('utf-8')):,} bytes; shared display white={white}")
+    return page, white
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Build the static BBBC006v1 worked-report page from the verified example.")
+    parser.add_argument("--output", type=Path, default=OUTPUT,
+                        help="page to write, or to compare with --check (default: %(default)s)")
+    parser.add_argument("--check", action="store_true",
+                        help="rebuild in memory, write nothing, and exit 1 if --output is stale")
+    args = parser.parse_args(argv)
+    page, white = render()
+    if not args.check:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_bytes(page.encode("utf-8"))
+        print(f"{args.output}: {len(page.encode('utf-8')):,} bytes; shared display white={white}")
+        return 0
+    try:
+        current = args.output.read_text(encoding="utf-8")
+        if current == page:
+            print(f"{args.output}: up to date (byte-identical rebuild)")
+            return 0
+        if page_fingerprint(current) == page_fingerprint(page):
+            print(f"{args.output}: up to date (preview PNG bytes differ; "
+                  "decoded pixels and all other page bytes are identical)")
+            return 0
+    except (OSError, ValueError) as exc:
+        print(f"{args.output}: cannot compare ({exc})", file=sys.stderr)
+        return 1
+    print(f"{args.output}: stale; rebuild with python -m tools.build_worked_report",
+          file=sys.stderr)
+    return 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
