@@ -91,4 +91,4 @@ After the pip install above, `python -m unittest discover -s tests` runs the sam
 
 No patient data, paid model service, credential, or Docker environment is required.
 
-Estate on Hugging Face: models, datasets and Spaces are published under the [SZLHOLDINGS](https://huggingface.co/SZLHOLDINGS) org.
+Estate on Hugging Face: models, datasets and Spaces are published under the [SZLHOLDINGS](https://huggingface.co/SZLHOLDINGS) org. This repository publishes none of them; its example images, manifest, and reports live here.
