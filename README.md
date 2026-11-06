@@ -29,6 +29,16 @@ The command verifies the local source files before measurement and writes `repor
 uv --cache-dir .uv-cache run --locked python -m microscopy_pilot verify --manifest examples/bbbc006v1/manifest.json
 ```
 
+Without uv, install the package and its exact Pillow pin into a virtual environment, then run the same module from the repository root:
+
+```sh
+python -m venv .venv && . .venv/bin/activate
+python -m pip install -e '.[test]'
+python -m microscopy_pilot verify --manifest examples/bbbc006v1/manifest.json
+```
+
+The `test` extra adds no packages; the suite uses the standard-library `unittest`. A pip install resolves `Pillow==13.0.0` from PyPI without the hashes recorded in `uv.lock`.
+
 See the [five-minute walkthrough](docs/WORKED_EXAMPLE.md) and its [readable report](docs/worked_report.html). The machine-readable output follows [the explanation schema](schemas/explanation.schema.json). The command runs locally; it does not call an atlas or model API.
 
 ## What the report says
@@ -59,20 +69,26 @@ Please cite the source as recommended by the collection: “We used the image se
 
 `examples/bbbc006v1/manifest.json` is the input record. Preserve its source and license fields, exact byte counts, and SHA-256 hashes when sharing a report. A changed or damaged file must fail verification rather than silently producing new measurements. The run verifies local bytes; source URLs and acquisition metadata are recorded from the manifest and are not independently checked against the remote archive on each run. The report contains the method version, decoder, and parameters so a later run can be compared with the same algorithm. For another sample, provide verified metadata and permission, then use the same schema to keep observations separate from biological interpretation.
 
-The checked-in [example report](examples/bbbc006v1/report.json) is the reference output. It retains its original Pillow 11.3.0 decoder provenance. The Pillow 13.0.0 compatibility test verifies identical image measurements and report fields except for the newly reported decoder version; it does not rewrite that historical report. To regenerate the static HTML view from that report and the original TIFFs:
+The checked-in [example report](examples/bbbc006v1/report.json) is the reference output. It retains its original Pillow 11.3.0 decoder provenance. The Pillow 13.0.0 compatibility test verifies identical image measurements and report fields except for the newly reported decoder version; it does not rewrite that historical report. The HTML builder applies the same rule: it stops unless a fresh verified run reproduces every field of that report except `method.parameters.decoder`. To regenerate the static HTML view from that report and the original TIFFs:
 
 ```sh
 uv --cache-dir .uv-cache run --locked python -m tools.build_worked_report
 ```
 
+Add `--check` to rebuild the page in memory without writing it; the command exits 1 if `docs/worked_report.html` is stale. With the locked toolchain on Linux x86-64, the rebuild is byte-identical to the committed page. If a different zlib build changes only the PNG compression bytes, `--check` compares the decoded preview pixels instead and says so.
+
 The HTML embeds small display-only PNG previews made with one shared linear scale; the code measures the original TIFF bytes.
 
-The tests include missing metadata, damaged bytes or hash mismatch, unsupported biological claims, and absent atlas evidence. Run them from the repository root with:
+To fetch the two TIFFs from the Broad archives instead of using the committed copies, run `python tools/fetch_native_example.py` (network required). It requests only each file's recorded byte range, refuses redirects, and rejects a response whose status, range, length, decompressed size, CRC-32, or SHA-256 differs from the record. Both files are verified before either is written to `examples/bbbc006v1/images/` (or `--output-dir`).
+
+The tests include missing metadata, damaged bytes or hash mismatch, unsupported biological claims, absent atlas evidence, the quickstart commands, and the HTML rebuild. Run them from the repository root with:
 
 ```sh
 uv --cache-dir .uv-cache run --locked python -m unittest discover -s tests
 ```
 
+After the pip install above, `python -m unittest discover -s tests` runs the same suite.
+
 No patient data, paid model service, credential, or Docker environment is required.
 
-Estate on Hugging Face: models, datasets and Spaces are published under the [SZLHOLDINGS](https://huggingface.co/SZLHOLDINGS) org.
+Estate on Hugging Face: models, datasets and Spaces are published under the [SZLHOLDINGS](https://huggingface.co/SZLHOLDINGS) org. This repository publishes none of them; its example images, manifest, and reports live here.
