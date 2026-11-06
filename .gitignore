@@ -5,3 +5,6 @@ __pycache__/
 *.py[cod]
 /report.json
 *.tmp
+build/
+dist/
+*.egg-info/

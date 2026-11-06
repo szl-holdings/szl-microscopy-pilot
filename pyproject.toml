@@ -1,9 +1,44 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "szl-microscopy-pilot"
 version = "0.1.0"
 description = "Bounded evidence-gated microscopy image quality example"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "SZL Holdings contributors" }]
+keywords = ["microscopy", "image quality", "reproducibility", "BBBC006"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
 requires-python = ">=3.11"
 dependencies = ["Pillow==13.0.0"]
 
+[project.optional-dependencies]
+# The suite is standard-library unittest; this extra installs no extra packages.
+test = []
+
+[project.urls]
+Homepage = "https://github.com/szl-holdings/szl-microscopy-pilot"
+Source = "https://github.com/szl-holdings/szl-microscopy-pilot"
+Issues = "https://github.com/szl-holdings/szl-microscopy-pilot/issues"
+Documentation = "https://github.com/szl-holdings/szl-microscopy-pilot/blob/main/docs/WORKED_EXAMPLE.md"
+
+[tool.setuptools]
+packages = ["microscopy_pilot"]
+
 [tool.uv]
+# uv runs the repository as a virtual project: `uv run` installs only the
+# locked dependencies and imports the package from the working tree.
 package = false

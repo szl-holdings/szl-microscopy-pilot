@@ -102,3 +102,4 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "pillow", specifier = "==13.0.0" }]
+provides-extras = ["test"]
