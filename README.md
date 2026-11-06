@@ -74,3 +74,5 @@ uv --cache-dir .uv-cache run --locked python -m unittest discover -s tests
 ```
 
 No patient data, paid model service, credential, or Docker environment is required.
+
+Estate on Hugging Face: models, datasets and Spaces are published under the [SZLHOLDINGS](https://huggingface.co/SZLHOLDINGS) org.
