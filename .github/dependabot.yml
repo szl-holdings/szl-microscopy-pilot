@@ -4,7 +4,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-  - package-ecosystem: "pip"
+  # uv, not pip: the pip ecosystem updates .txt and PEP 621 pyproject.toml
+  # files but not uv.lock, so its PRs would fail CI's `uv lock --check`.
+  # Dependabot security updates for this repository already use uv.
+  - package-ecosystem: "uv"
     directory: "/"
     schedule:
       interval: "weekly"

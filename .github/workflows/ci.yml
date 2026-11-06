@@ -1,8 +1,9 @@
 name: ci
 
 # Source CI: proves uv.lock is current and runs the offline unittest suite on
-# the declared Python floor (3.11, from requires-python) and the current
-# development interpreter (3.12). No secrets, no network writes.
+# the declared Python floor (3.11, from requires-python), the current
+# development interpreter (3.12) and the newest classified interpreter (3.13).
+# No secrets, no network writes.
 
 on:
   pull_request:
@@ -25,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
