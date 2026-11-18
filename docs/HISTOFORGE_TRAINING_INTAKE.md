@@ -127,7 +127,9 @@ Bounded protective checks:
    scientific preimage digest; strict reject duplicate JSON object keys.
 3. Closed ZIP member list, relative ASCII paths, no traversal/symlink,
    no encryption, unsupported compression or zip-bomb expansion;
-   streaming SHA-256 of **all** declared members. **No extraction**.
+   streaming SHA-256 of **all** declared members, after entry/ratio budgets
+   have been checked. No preflight `ZipFile.testzip()` that could
+   decompress oversized members before admission. **No extraction**.
 4. Source image digests sorted and unique, ROI identities and artifact
    links valid, complete file closure and nonzero physical MPP.
 5. Dataset-bound split sidecar with training **and** validation groups.

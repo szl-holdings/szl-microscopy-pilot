@@ -445,6 +445,67 @@ class HistoForgeIntakeTests(SyntheticFixture):
         self.assertFalse(result["training_execution_authorized"])
         self.assertFalse(result["upload_authorized"])
 
+    def test_histo_source_requires_jcs_sorted_project_groups(self):
+        manifest = sample_manifest()
+        manifest["project_groups"].reverse()
+        manifest["dataset_digest"] = sha_bytes(
+            rfc8785.dumps({k: v for k, v in manifest.items() if k != "dataset_digest"})
+        )
+        self.assert_hold(
+            self.fixture(manifest=manifest),
+            "PROJECT_GROUP_ORDER_NOT_CANONICAL",
+        )
+
+    def test_derived_artifact_must_pair_with_exact_roi(self):
+        from microscopy_pilot.histoforge_intake import manifest_checks
+
+        manifest = sample_manifest()
+        manifest["artifacts"] = [
+            {"image_index": 0, "representation": "png"},
+            {"image_index": 0, "representation": "png"},
+            {"image_index": 1, "representation": "png"},
+        ]
+        first = copy.deepcopy(manifest["rois"][0])
+        duplicate = copy.deepcopy(first)
+        duplicate["source_roi_uuid"] = str(uuid.UUID(int=3))
+        # This second ROI for image zero incorrectly reuses artifact 0;
+        # count-only validation would miss the mismatch.
+        duplicate["source_envelope"]["artifact_index"] = 0
+        second = copy.deepcopy(manifest["rois"][1])
+        second["source_envelope"]["artifact_index"] = 2
+        manifest["rois"] = [first, duplicate, second]
+        filenames = [
+            f"artifacts/{idx}/{leaf}"
+            for idx in range(3)
+            for leaf in ("origin.json", "source.png")
+        ] + [
+            f"rois/{idx}/{leaf}"
+            for idx in range(3)
+            for leaf in ("objects.geojson", "roi.geojson")
+        ]
+        manifest["files"] = [
+            {"path": name, "size_bytes": 1, "sha256": "a" * 64}
+            for name in sorted(filenames)
+        ]
+        manifest["dataset_digest"] = sha_bytes(
+            rfc8785.dumps({k: v for k, v in manifest.items() if k != "dataset_digest"})
+        )
+        with self.assertRaisesRegex(IntakeHold, "DERIVED_ARTIFACT_PAIR_MISMATCH"):
+            manifest_checks(manifest)
+
+    def test_zip_preflight_never_calls_unbounded_testzip(self):
+        from unittest.mock import patch
+
+        request = self.fixture()
+        with patch.object(
+            zipfile.ZipFile,
+            "testzip",
+            side_effect=AssertionError("testzip bypassed safety budget"),
+        ):
+            result = inspect_intake(request)
+        self.assertEqual(result["data"]["file_count"], 8)
+        self.assertFalse(result["training_execution_authorized"])
+
     def test_cli_exclusive_create_and_secret_free_output(self):
         request = self.fixture()
         out = self.root / "admission.json"

@@ -249,6 +249,8 @@ def manifest_checks(manifest: Any) -> tuple[dict, set[str]]:
         or len(set(groups)) != len(groups)
     ):
         hold("SPECIMEN_GROUPS_UNAVAILABLE")
+    if groups != sorted(groups, key=jcs):
+        hold("PROJECT_GROUP_ORDER_NOT_CANONICAL")
     if not isinstance(images, list) or not 2 <= len(images) <= MAX_IMAGES:
         hold("IMAGE_COVERAGE_UNAVAILABLE")
     if not isinstance(rois, list) or not 2 <= len(rois) <= MAX_ROIS:
@@ -306,6 +308,10 @@ def manifest_checks(manifest: Any) -> tuple[dict, set[str]]:
         per_image[image_index] += 1
         required.add(f"artifacts/{index}/origin.json")
         required.add(f"artifacts/{index}/{ARTIFACT_REP[rep]}")
+    if [artifact["image_index"] for artifact in artifacts] != sorted(
+        artifact["image_index"] for artifact in artifacts
+    ):
+        hold("ARTIFACTS_NOT_SORTED_BY_IMAGE")
     per_roi = [0] * len(images)
     roi_ids = set()
     prev_roi_key = None
@@ -366,8 +372,14 @@ def manifest_checks(manifest: Any) -> tuple[dict, set[str]]:
             )
         ):
             hold("ORIGINAL_ARTIFACT_GRAPH_INVALID")
-        if "original" not in representations and len(indexes) != len(expected_rois):
-            hold("DERIVED_ARTIFACT_COUNT_MISMATCH")
+        if "original" not in representations:
+            if len(indexes) != len(expected_rois):
+                hold("DERIVED_ARTIFACT_COUNT_MISMATCH")
+            if any(
+                roi["source_envelope"]["artifact_index"] != artifact_idx
+                for roi, artifact_idx in zip(expected_rois, indexes, strict=True)
+            ):
+                hold("DERIVED_ARTIFACT_PAIR_MISMATCH")
     return m, paths
 
 
@@ -434,7 +446,11 @@ def verify_archive(archive: Path, manifest_limit: int = MAX_JSON) -> tuple[dict,
     try:
         with zipfile.ZipFile(archive, "r", allowZip64=True) as package:
             entries = package.infolist()
-            if not 2 <= len(entries) <= MAX_MEMBERS or package.testzip() is not None:
+            # Never call testzip() before validating metadata limits: it
+            # decompresses every member and could expand a ZIP bomb before
+            # the declared size/ratio budgets are checked. Streamed member
+            # reads below verify both SHA-256 and ZIP CRC after caps pass.
+            if not 2 <= len(entries) <= MAX_MEMBERS:
                 hold("ZIP_MEMBER_STRUCTURE_OR_CRC")
             names = []
             sizes = {}
