@@ -1,0 +1,359 @@
+{
+  "schema": "szl.pathology-frontier-registry/v1",
+  "reviewed_utc": "2026-11-18T05:05:00Z",
+  "policy": {
+    "claim": "SOURCE_PINNED_LITERATURE_ADVISORY_ONLY",
+    "code_copied": false,
+    "weights_downloaded": false,
+    "dataset_downloaded": false,
+    "training_started": false,
+    "gpu_job_allowed": false,
+    "cloud_upload_allowed": false,
+    "publication_allowed": false,
+    "clinical_use_allowed": false,
+    "model_rights_independently_verified": false,
+    "required_gates": [
+      "DATA_RIGHTS_AND_DEIDENTIFICATION",
+      "INDEPENDENT_PATIENT_GROUP_REGISTRY",
+      "ORIGINAL_HISTOFORGE_SCIENCE_VALIDATION",
+      "ACTUAL_MODEL_WEIGHT_LICENSE",
+      "FROZEN_EXTERNAL_HELDOUT_TEST",
+      "SIGNED_GPU_CAPACITY_BUDGET",
+      "INDEPENDENT_CKPT_AND_METRIC_READBACK"
+    ]
+  },
+  "validation": {
+    "partitions": [
+      "training",
+      "validation",
+      "heldout_test"
+    ],
+    "unit": "independent_specimen_or_patient",
+    "site_stain_shift_required": true,
+    "physical_microns_per_pixel_required": true,
+    "instance_iou_threshold_strictly_above": 0.5,
+    "bootstrap": {
+      "unit": "specimen",
+      "replicates": 1000,
+      "seed": 20261118,
+      "minimum_n": 5
+    },
+    "metric_domains": {
+      "instance": [
+        "PQ",
+        "Dice",
+        "detection_F1"
+      ],
+      "cell_classification": [
+        "macro_F1",
+        "ece"
+      ],
+      "semantic": [
+        "Dice",
+        "ece"
+      ],
+      "slide": [
+        "AUROC",
+        "AUPRC",
+        "ece"
+      ]
+    },
+    "reported_scores": "NONE_CURRENTLY_MEASURED_BY_SZL"
+  },
+  "sources": [
+    {
+      "id": "histoforge_backend",
+      "repo": "HistoForge/histoforge-backend",
+      "sha": "ec0a838dcc875d5c01c68c6c585747bc615fd6cf",
+      "paper": "https://histoforge.github.io/docs/",
+      "idea": "native JCS data-v2 and specimen-level split-v1",
+      "license_review": "dataset+cloud rights separate"
+    },
+    {
+      "id": "histoforge_model",
+      "repo": "HistoForge/histoforge-models",
+      "sha": "7c299f75d0dc15a10318b49c85285f490fa476e0",
+      "paper": "https://histoforge.github.io/docs/",
+      "idea": "DINOv3 plus Cellpose-flow and HoVer heads",
+      "license_review": "weights need individual review"
+    },
+    {
+      "id": "histoforge_qupath",
+      "repo": "HistoForge/histoforge-qupath-extension",
+      "sha": "147a0813cd2682a8a38aa88f31c4c38f35c10b2a",
+      "paper": "https://histoforge.github.io/docs/",
+      "idea": "human ROI label correction",
+      "license_review": "GPL-3.0; independent process"
+    },
+    {
+      "id": "dinov3",
+      "repo": "facebookresearch/dinov3",
+      "sha": "6876159a11b4df116f30f667f8c9888617df0751",
+      "paper": "https://ai.meta.com/research/publications/dinov3/",
+      "idea": "frozen dense-feature adapter",
+      "license_review": "Meta DINOv3 commercial/license conditions"
+    },
+    {
+      "id": "cellvit_plus",
+      "repo": "TIO-IKIM/CellViT-plus-plus",
+      "sha": "463c5c44bfdebfbe3943597eaa84daf3f5e26a5f",
+      "paper": "https://doi.org/10.1016/j.cmpb.2025.109206",
+      "idea": "efficient cell-type classification head",
+      "license_review": "Commons Clause commercial restriction"
+    },
+    {
+      "id": "pathosam",
+      "repo": "computational-cell-analytics/patho-sam",
+      "sha": "4b6b4fe32f7fc6b0b314c270f4b1f8ca1bcc3a64",
+      "paper": "https://proceedings.mlr.press/v301/griebel26a.html",
+      "idea": "interactive nucleus mask baseline",
+      "license_review": "MIT code; separately review models/data"
+    },
+    {
+      "id": "cellsam",
+      "repo": "vanvalenlab/cellSAM",
+      "sha": "362a8e521bcd7313d5cb280bcd4cfc12977c1e9f",
+      "paper": "https://doi.org/10.1038/s41592-025-02879-w",
+      "idea": "CellFinder-prompted SAM cross-modal masks",
+      "license_review": "weights/data separate"
+    },
+    {
+      "id": "cellpose4",
+      "repo": "MouseLand/cellpose",
+      "sha": "a54cb48849b7e225a81e8e43dcb042d42427f543",
+      "paper": "https://www.biorxiv.org/content/10.1101/2025.04.28.651001v1",
+      "idea": "Cellpose-SAM flow segmentation and DINOv3 ablation",
+      "license_review": "pretrained models/data CC-BY-NC"
+    },
+    {
+      "id": "hovernet",
+      "repo": "vqdang/hover_net",
+      "sha": "67e2ce5e3f1a64a2ece77ad1c24233653a9e0901",
+      "paper": "https://doi.org/10.1016/j.media.2019.101563",
+      "idea": "horizontal/vertical nuclear distance head",
+      "license_review": "source/weights independently review"
+    },
+    {
+      "id": "nnunet",
+      "repo": "MIC-DKFZ/nnUNet",
+      "sha": "131289433bdac0610f8b80a0b406e18bcfe51a2a",
+      "paper": "https://doi.org/10.1038/s41592-020-01008-z",
+      "idea": "train-from-scratch segmentation baseline",
+      "license_review": "source Apache-2.0; rights for data separate"
+    },
+    {
+      "id": "monai",
+      "repo": "Project-MONAI/MONAI",
+      "sha": "90573b4f29d454055ee4d39f33cea217bb945cce",
+      "paper": "https://github.com/Project-MONAI/MONAI",
+      "idea": "deterministic training transforms and bounded eval",
+      "license_review": "source Apache-2.0; weights separate"
+    },
+    {
+      "id": "tiatoolbox",
+      "repo": "TissueImageAnalytics/tiatoolbox",
+      "sha": "c4a5afa1b7bb44cf30a539453a54f07454800e6a",
+      "paper": "https://doi.org/10.1038/s43856-022-00186-5",
+      "idea": "WSI tiling+QuPath evidence compatibility",
+      "license_review": "third-party weights and data separate"
+    },
+    {
+      "id": "uni2",
+      "repo": "mahmoodlab/UNI",
+      "sha": "42715efc11722a496e0a67f3369505a8f277206c",
+      "paper": "https://github.com/mahmoodlab/UNI",
+      "idea": "frozen pathology patch embeddings",
+      "license_review": "gated UNI2-h checkpoint and redistribution"
+    },
+    {
+      "id": "gigapath",
+      "repo": "prov-gigapath/prov-gigapath",
+      "sha": "55431e04ff853a08f752a0ba42e6e9c48e60c776",
+      "paper": "https://doi.org/10.1038/s41586-024-07441-w",
+      "idea": "whole-slide tile aggregation",
+      "license_review": "code/weight-specific rights separate"
+    },
+    {
+      "id": "virchow",
+      "repo": "Paige-AI/paige-ml-sdk",
+      "sha": "41f39afd69a265503680de0ade5f5354f346ecd4",
+      "paper": "https://doi.org/10.1038/s41591-024-03141-0",
+      "idea": "out-of-domain pathology feature comparisons",
+      "license_review": "Virchow research-only model permissions"
+    }
+  ],
+  "arms": [
+    {
+      "id": "nuclei_scratch",
+      "task": "instance",
+      "source_ids": [
+        "histoforge_backend",
+        "nnunet",
+        "monai"
+      ],
+      "baseline": null,
+      "metrics": [
+        "PQ",
+        "Dice",
+        "detection_F1"
+      ],
+      "objective": "Original scratch baseline: pinned physical scale, patient-group split and equal compute budget.",
+      "source_only": true,
+      "training_authorized": false,
+      "model_weights_admitted": false,
+      "benchmarked": false
+    },
+    {
+      "id": "hover_offset",
+      "task": "instance",
+      "source_ids": [
+        "histoforge_model",
+        "hovernet"
+      ],
+      "baseline": "nuclei_scratch",
+      "metrics": [
+        "PQ",
+        "Dice",
+        "detection_F1"
+      ],
+      "objective": "Horizontal/vertical target separation for crowded nuclei.",
+      "source_only": true,
+      "training_authorized": false,
+      "model_weights_admitted": false,
+      "benchmarked": false
+    },
+    {
+      "id": "cellpose_flow",
+      "task": "instance",
+      "source_ids": [
+        "histoforge_model",
+        "cellpose4"
+      ],
+      "baseline": "hover_offset",
+      "metrics": [
+        "PQ",
+        "Dice",
+        "detection_F1"
+      ],
+      "objective": "Vector flow target against HoVer using the same source and compute budget.",
+      "source_only": true,
+      "training_authorized": false,
+      "model_weights_admitted": false,
+      "benchmarked": false
+    },
+    {
+      "id": "pathosam_prompt",
+      "task": "instance",
+      "source_ids": [
+        "pathosam",
+        "tiatoolbox"
+      ],
+      "baseline": "nuclei_scratch",
+      "metrics": [
+        "PQ",
+        "Dice",
+        "detection_F1"
+      ],
+      "objective": "Human-corrected prompt segmentation; pseudo-labels never treated as independent gold.",
+      "source_only": true,
+      "training_authorized": false,
+      "model_weights_admitted": false,
+      "benchmarked": false
+    },
+    {
+      "id": "cellsam_shift",
+      "task": "instance",
+      "source_ids": [
+        "cellsam",
+        "pathosam"
+      ],
+      "baseline": "pathosam_prompt",
+      "metrics": [
+        "PQ",
+        "Dice",
+        "detection_F1"
+      ],
+      "objective": "Cross-modal frozen-head transfer under different acquisition and stain.",
+      "source_only": true,
+      "training_authorized": false,
+      "model_weights_admitted": false,
+      "benchmarked": false
+    },
+    {
+      "id": "dinov3_adapter",
+      "task": "instance",
+      "source_ids": [
+        "dinov3",
+        "histoforge_model"
+      ],
+      "baseline": "cellpose_flow",
+      "metrics": [
+        "PQ",
+        "Dice",
+        "detection_F1"
+      ],
+      "objective": "Frozen dense features with small spatial adapter, rights and VRAM gated.",
+      "source_only": true,
+      "training_authorized": false,
+      "model_weights_admitted": false,
+      "benchmarked": false
+    },
+    {
+      "id": "celltype_head",
+      "task": "cell_classification",
+      "source_ids": [
+        "cellvit_plus",
+        "uni2"
+      ],
+      "baseline": null,
+      "metrics": [
+        "macro_F1",
+        "ece"
+      ],
+      "objective": "Lightweight label-taxonomy classifier on permitted frozen nucleus features.",
+      "source_only": true,
+      "training_authorized": false,
+      "model_weights_admitted": false,
+      "benchmarked": false
+    },
+    {
+      "id": "tissue_stain",
+      "task": "semantic",
+      "source_ids": [
+        "nnunet",
+        "monai",
+        "tiatoolbox"
+      ],
+      "baseline": null,
+      "metrics": [
+        "Dice",
+        "ece"
+      ],
+      "objective": "Train-from-scratch semantic segmentation under stain/site-held-out test.",
+      "source_only": true,
+      "training_authorized": false,
+      "model_weights_admitted": false,
+      "benchmarked": false
+    },
+    {
+      "id": "slide_context",
+      "task": "slide",
+      "source_ids": [
+        "uni2",
+        "gigapath",
+        "virchow"
+      ],
+      "baseline": null,
+      "metrics": [
+        "AUROC",
+        "AUPRC",
+        "ece"
+      ],
+      "objective": "Frozen WSI classification features, not nucleus segmentation; licensed weights required.",
+      "source_only": true,
+      "training_authorized": false,
+      "model_weights_admitted": false,
+      "benchmarked": false
+    }
+  ]
+}
