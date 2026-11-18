@@ -11,6 +11,11 @@ from .core import PilotError, run
 
 
 def main() -> int:
+    if len(sys.argv) > 1 and sys.argv[1] == "histoforge-admit":
+        # Existing CLI, additive scientific intake. Never launches training.
+        from .histoforge_intake import main as histoforge_main
+
+        return histoforge_main(sys.argv[2:])
     parser = argparse.ArgumentParser(description="Offline microscopy image-quality report")
     sub = parser.add_subparsers(dest="command", required=True)
     for name in ("run", "verify"):

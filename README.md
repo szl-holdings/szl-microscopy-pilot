@@ -15,6 +15,35 @@
 
 A small, CPU-only example of how to attach a checkable explanation to an image-quality measurement. It reads two images, verifies their recorded byte hashes, measures a few simple pixel properties, and writes a JSON report with evidence, caveats, and a pending human decision. The example uses a matched field from [BBBC006v1](https://bbbc.broadinstitute.org/BBBC006), an openly released U2OS microscopy image set. This is a worked quality-control example, not a benchmark result or a biological finding.
 
+## HistoForge histology → guarded training intake (no compute)
+
+SZL now has an **offline, source-pinned HistoForge ingestion contract**
+alongside the existing BBBC006 microscopy QC pilot. It reads HistoForge
+schema-v2 `dataset.json` directly from a bounded ZIP plus its
+dataset-digest-bound split sidecar, verifies every declared archive member's
+SHA-256 without extracting or executing model code, checks image/ROI
+and specimen group partition invariants, and writes a private
+**non-executable** intake evidence record.
+
+The entry point is `python -m microscopy_pilot histoforge-admit --request
+/path/to/intake.json --out /path/to/evidence.json`. It uses
+`rfc8785==0.1.4` to reproduce HistoForge's native canonical scientific
+dataset digest. The standalone `python -m microscopy_pilot.histoforge_intake`
+form has the same semantics. The request is a separate, SZL-reviewed
+declaration of exact source revisions, local archive/sidecar SHA-256 and
+**untrusted** permission fields.
+
+**No real histology images or weights are bundled or downloaded.** No
+HistoForge/Modal execution, new GPU job, billable activity, private dataset
+upload, model evaluation, publication or clinical claim is authorized by
+this integration. HistoForge's QuPath extension is GPL-3.0; backend/model
+implementation software is Apache-2.0 (+ Cellpose BSD notices); actual
+Hugging Face starter weights may be gated with different terms. Preserve
+upstream model and dataset rights before training.
+
+See [the exact source contract, reproducible setup and remaining scientific
+admission gates](docs/HISTOFORGE_TRAINING_INTAKE.md).
+
 ## Five-minute quickstart
 
 From the repository root, with [uv](https://docs.astral.sh/uv/) available:
