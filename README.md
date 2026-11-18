@@ -44,6 +44,29 @@ upstream model and dataset rights before training.
 See [the exact source contract, reproducible setup and remaining scientific
 admission gates](docs/HISTOFORGE_TRAINING_INTAKE.md).
 
+## Pathology frontier research and original evaluation mathematics
+
+The [HistoForge intake](docs/HISTOFORGE_TRAINING_INTAKE.md) is now
+paired with a source-pinned [comparative research curriculum](docs/PATHOLOGY_FRONTIER_RESEARCH.md):
+15 major pathology/segmentation codebases and publications, nine
+non-executing experiment arms, and an original bounded Python reference
+for panoptic quality, foreground Dice and specimen-level uncertainty.
+This is **study-to-training planning only**—no weights downloaded, no
+paid GPU jobs, no patient data, and no completed external benchmark.
+
+```sh
+uv run --frozen python -m microscopy_pilot.pathology_frontier \
+  --registry research/pathology_frontier_v1.json \
+  --out /private/pathology-study-plan.json
+```
+
+The command compiles research hypotheses and required rights, physical
+scale, patient-held-out and source-evidence gates; **it does not create a
+trainable GPU job**. The original [registry](research/pathology_frontier_v1.json)
+pins all external source commits and retains software/weight licensing
+warnings, including restricted CellViT++ code, Cellpose pretrained models
+and gated pathology encoders.
+
 ## Five-minute quickstart
 
 From the repository root, with [uv](https://docs.astral.sh/uv/) available:
