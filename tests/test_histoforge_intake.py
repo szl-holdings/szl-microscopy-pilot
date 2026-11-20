@@ -261,7 +261,9 @@ class HistoForgeIntakeTests(SyntheticFixture):
                 m["dataset_digest"] = sha_bytes(
                     rfc8785.dumps({k: v for k, v in m.items() if k != "dataset_digest"})
                 )
-                with self.assertRaisesRegex(IntakeHold, "^TASK_INPUT_OR_OUTPUT_UNSUPPORTED$"):
+                with self.assertRaisesRegex(
+                    IntakeHold, "^TASK_INPUT_OR_OUTPUT_UNSUPPORTED$"
+                ):
                     manifest_checks(m)
 
             with self.subTest(field="artifacts.representation", value=repr(malformed)):
@@ -277,7 +279,9 @@ class HistoForgeIntakeTests(SyntheticFixture):
                 m = sample_manifest()
                 side = sample_split(m)
                 side["split_plan"]["assignment_source"] = malformed
-                with self.assertRaisesRegex(IntakeHold, "^SPLIT_ASSIGNMENT_SOURCE_UNSUPPORTED$"):
+                with self.assertRaisesRegex(
+                    IntakeHold, "^SPLIT_ASSIGNMENT_SOURCE_UNSUPPORTED$"
+                ):
                     validate_split(side, m)
 
             with self.subTest(field="split.partition", value=repr(malformed)):
