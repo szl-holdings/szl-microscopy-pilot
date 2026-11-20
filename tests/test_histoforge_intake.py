@@ -291,6 +291,28 @@ class HistoForgeIntakeTests(SyntheticFixture):
                 with self.assertRaisesRegex(IntakeHold, "^INVALID_SPLIT_PARTITION$"):
                     validate_split(side, m)
 
+    def test_unicode_confusable_enum_values_are_not_normalized(self):
+        # RFC 8785 preserves Unicode strings as-is. Enum identity stays exact.
+        from microscopy_pilot.histoforge_intake import manifest_checks, validate_split
+
+        manifest = sample_manifest()
+        manifest["task"]["input_kind"] = "f\u0456eld"  # Cyrillic i, not ASCII i.
+        manifest["dataset_digest"] = sha_bytes(
+            rfc8785.dumps(
+                {k: v for k, v in manifest.items() if k != "dataset_digest"}
+            )
+        )
+        with self.assertRaisesRegex(
+            IntakeHold, "^TASK_INPUT_OR_OUTPUT_UNSUPPORTED$"
+        ):
+            manifest_checks(manifest)
+
+        manifest = sample_manifest()
+        sidecar = sample_split(manifest)
+        sidecar["split_plan"]["units"][0]["partition"] = "train\u0456ng"
+        with self.assertRaisesRegex(IntakeHold, "^INVALID_SPLIT_PARTITION$"):
+            validate_split(sidecar, manifest)
+
     def test_unhashable_task_field_cli_emits_hold_without_traceback(self):
         m = sample_manifest()
         m["task"]["input_kind"] = {}
