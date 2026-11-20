@@ -250,11 +250,11 @@ class HistoForgeIntakeTests(SyntheticFixture):
             with self.subTest(value=invalid):
                 self.assert_hold(self.fixture(manifest=m), "MICRONS_PER_PIXEL_INVALID")
 
-    def test_unhashable_json_enum_values_fail_closed(self):
-        # Valid JSON lists/objects must yield typed holds, never TypeError.
+    def test_wrong_type_json_enum_values_fail_closed(self):
+        # All JSON non-string enums must yield typed holds, never TypeError.
         from microscopy_pilot.histoforge_intake import manifest_checks, validate_split
 
-        for malformed in ([], {}, {"unexpected": ["nested"]}):
+        for malformed in ([], {}, {"unexpected": ["nested"]}, True, 1, None):
             with self.subTest(field="task.input_kind", value=repr(malformed)):
                 m = sample_manifest()
                 m["task"]["input_kind"] = malformed
