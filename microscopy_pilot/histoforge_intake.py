@@ -229,8 +229,10 @@ def manifest_checks(manifest: Any) -> tuple[dict, set[str]]:
     mpp = task["model_microns_per_pixel"]
     if type(mpp) not in {int, float} or not math.isfinite(mpp) or mpp <= 0 or mpp > 100:
         hold("MICRONS_PER_PIXEL_INVALID")
-    if task["input_kind"] not in {"field", "crop"} or not isinstance(
-        task["model_output"], dict
+    if (
+        not isinstance(task["input_kind"], str)
+        or task["input_kind"] not in {"field", "crop"}
+        or not isinstance(task["model_output"], dict)
     ):
         hold("TASK_INPUT_OR_OUTPUT_UNSUPPORTED")
     if type(task["supports_negative_rois"]) is not bool or not isinstance(
@@ -303,7 +305,7 @@ def manifest_checks(manifest: Any) -> tuple[dict, set[str]]:
             artifact["image_index"], 0, len(images) - 1, "ARTIFACT_IMAGE_INDEX"
         )
         rep = artifact["representation"]
-        if rep not in ARTIFACT_REP:
+        if not isinstance(rep, str) or rep not in ARTIFACT_REP:
             hold("ARTIFACT_REP_UNSUPPORTED")
         per_image[image_index] += 1
         required.add(f"artifacts/{index}/origin.json")
@@ -398,7 +400,10 @@ def validate_split(value: Any, dataset: dict) -> dict:
     require_keys(plan, required, "SPLIT_PLAN_SCHEMA")
     if plan["type"] != "split" or plan["unit"] != "project_group":
         hold("SPECIMEN_LEVEL_SPLIT_REQUIRED")
-    if plan["assignment_source"] not in {"generated", "custom"}:
+    if (
+        not isinstance(plan["assignment_source"], str)
+        or plan["assignment_source"] not in {"generated", "custom"}
+    ):
         hold("SPLIT_ASSIGNMENT_SOURCE_UNSUPPORTED")
     if "requested_validation_percent" in plan:
         require_count(
@@ -415,7 +420,10 @@ def validate_split(value: Any, dataset: dict) -> dict:
             or assignment["unit_index"] != index
         ):
             hold("SPLIT_ASSIGNMENT_ORDER")
-        if assignment["partition"] not in {"training", "validation"}:
+        if (
+            not isinstance(assignment["partition"], str)
+            or assignment["partition"] not in {"training", "validation"}
+        ):
             hold("INVALID_SPLIT_PARTITION")
         partitions.append(assignment["partition"])
     if set(partitions) != {"training", "validation"}:
