@@ -250,6 +250,102 @@ class HistoForgeIntakeTests(SyntheticFixture):
             with self.subTest(value=invalid):
                 self.assert_hold(self.fixture(manifest=m), "MICRONS_PER_PIXEL_INVALID")
 
+    def test_wrong_type_json_enum_values_fail_closed(self):
+        # All JSON non-string enums must yield typed holds, never TypeError.
+        from microscopy_pilot.histoforge_intake import manifest_checks, validate_split
+
+        for malformed in ([], {}, {"unexpected": ["nested"]}, True, 1, None):
+            with self.subTest(field="task.input_kind", value=repr(malformed)):
+                m = sample_manifest()
+                m["task"]["input_kind"] = malformed
+                m["dataset_digest"] = sha_bytes(
+                    rfc8785.dumps({k: v for k, v in m.items() if k != "dataset_digest"})
+                )
+                with self.assertRaisesRegex(
+                    IntakeHold, "^TASK_INPUT_OR_OUTPUT_UNSUPPORTED$"
+                ):
+                    manifest_checks(m)
+
+            with self.subTest(field="artifacts.representation", value=repr(malformed)):
+                m = sample_manifest()
+                m["artifacts"][0]["representation"] = malformed
+                m["dataset_digest"] = sha_bytes(
+                    rfc8785.dumps({k: v for k, v in m.items() if k != "dataset_digest"})
+                )
+                with self.assertRaisesRegex(IntakeHold, "^ARTIFACT_REP_UNSUPPORTED$"):
+                    manifest_checks(m)
+
+            with self.subTest(field="split.assignment_source", value=repr(malformed)):
+                m = sample_manifest()
+                side = sample_split(m)
+                side["split_plan"]["assignment_source"] = malformed
+                with self.assertRaisesRegex(
+                    IntakeHold, "^SPLIT_ASSIGNMENT_SOURCE_UNSUPPORTED$"
+                ):
+                    validate_split(side, m)
+
+            with self.subTest(field="split.partition", value=repr(malformed)):
+                m = sample_manifest()
+                side = sample_split(m)
+                side["split_plan"]["units"][0]["partition"] = malformed
+                with self.assertRaisesRegex(IntakeHold, "^INVALID_SPLIT_PARTITION$"):
+                    validate_split(side, m)
+
+    def test_unicode_confusable_enum_values_are_not_normalized(self):
+        # RFC 8785 preserves Unicode strings as-is. Enum identity stays exact.
+        from microscopy_pilot.histoforge_intake import manifest_checks, validate_split
+
+        manifest = sample_manifest()
+        manifest["task"]["input_kind"] = "f\u0456eld"  # Cyrillic i, not ASCII i.
+        manifest["dataset_digest"] = sha_bytes(
+            rfc8785.dumps(
+                {k: v for k, v in manifest.items() if k != "dataset_digest"}
+            )
+        )
+        with self.assertRaisesRegex(
+            IntakeHold, "^TASK_INPUT_OR_OUTPUT_UNSUPPORTED$"
+        ):
+            manifest_checks(manifest)
+
+        manifest = sample_manifest()
+        sidecar = sample_split(manifest)
+        sidecar["split_plan"]["units"][0]["partition"] = "train\u0456ng"
+        with self.assertRaisesRegex(IntakeHold, "^INVALID_SPLIT_PARTITION$"):
+            validate_split(sidecar, manifest)
+
+    def test_unhashable_task_field_cli_emits_hold_without_traceback(self):
+        m = sample_manifest()
+        m["task"]["input_kind"] = {}
+        m["dataset_digest"] = sha_bytes(
+            rfc8785.dumps({k: v for k, v in m.items() if k != "dataset_digest"})
+        )
+        request = self.fixture(manifest=m)
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "microscopy_pilot.histoforge_intake",
+                "--request",
+                str(request),
+                "--out",
+                str(self.root / "no-admission.json"),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertEqual(
+            json.loads(result.stdout),
+            {
+                "status": "HOLD",
+                "reason_code": "TASK_INPUT_OR_OUTPUT_UNSUPPORTED",
+                "training_started": False,
+            },
+        )
+        self.assertNotIn("Traceback", result.stderr)
+
     def test_roi_level_can_not_point_at_a_different_image(self):
         m = sample_manifest()
         m["rois"][0]["source_envelope"]["artifact_index"] = 1
