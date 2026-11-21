@@ -81,11 +81,22 @@ def _positive_shape(value: Any) -> tuple[int, int, int]:
 
 
 def _numbers(value: Any, *, positive: bool) -> tuple[float, float, float]:
-    if (not isinstance(value, list) or len(value) != 3 or
-            any(type(x) not in (int, float) or not math.isfinite(x) or
-                (positive and x <= 0) for x in value)):
+    if not isinstance(value, list) or len(value) != 3:
         raise GeometryError("INVALID_PHYSICAL_TRANSFORM")
-    return tuple(float(x) for x in value)
+    converted: list[float] = []
+    for x in value:
+        # Handle arbitrary-precision JSON integers *before* math.isfinite
+        # implicitly converts them to float and can raise OverflowError.
+        if type(x) not in (int, float) or abs(x) > 1e9:
+            raise GeometryError("INVALID_PHYSICAL_TRANSFORM")
+        try:
+            num = float(x)
+        except (ValueError, OverflowError):
+            raise GeometryError("INVALID_PHYSICAL_TRANSFORM") from None
+        if not math.isfinite(num) or (positive and num <= 0):
+            raise GeometryError("INVALID_PHYSICAL_TRANSFORM")
+        converted.append(num)
+    return tuple(converted)
 
 
 def audit_multiscale_geometry(manifest: dict[str, Any], root: Path) -> dict[str, Any]:
