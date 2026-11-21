@@ -20,7 +20,7 @@ MAX_LEVEL_BYTES = 4 * 1024 * 1024
 MAX_TOTAL_BYTES = 8 * 1024 * 1024
 MAX_LEVELS = 8
 SHA = re.compile(r"^[0-9a-f]{64}$")
-BASENAME = re.compile(r"^[A-Za-z0-9_-]{1,64}\\.raw$")
+BASENAME = re.compile(r"^[A-Za-z0-9_-]{1,64}\.raw$")
 AXES = ("z", "y", "x")
 
 
