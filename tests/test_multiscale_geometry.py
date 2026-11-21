@@ -89,6 +89,15 @@ class MultiscaleGeometryTests(unittest.TestCase):
             with self.assertRaises(GeometryError):
                 audit_multiscale_geometry(x, root)
 
+    def test_huge_finite_integer_scale_is_a_controlled_denial(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            x = fixture(root)
+            for bad in (10 ** 400, -(10 ** 400), True):
+                x["levels"][1]["scale_um"][1] = bad
+                with self.subTest(value=str(bad)[:8]), self.assertRaisesRegex(GeometryError, "INVALID_PHYSICAL_TRANSFORM"):
+                    audit_multiscale_geometry(x, root)
+
     def test_duplicate_json_keys_and_nan_rejected(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
