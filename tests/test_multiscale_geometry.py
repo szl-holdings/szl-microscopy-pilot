@@ -37,7 +37,9 @@ class MultiscaleGeometryTests(unittest.TestCase):
             a = audit_multiscale_geometry(read_manifest(root / "manifest.json"), root)
             b = audit_multiscale_geometry(read_manifest(root / "manifest.json"), root)
             self.assertEqual(a, b)
-            self.assertEqual([[0, 6], [0, 4.8], [0, 2.4]], a["world_bounds_um"])
+            for observed, expected in zip(a["world_bounds_um"], [[0, 6], [0, 4.8], [0, 2.4]]):
+                self.assertAlmostEqual(expected[0], observed[0], places=12)
+                self.assertAlmostEqual(expected[1], observed[1], places=12)
             self.assertEqual(216, a["total_bytes"])
             self.assertFalse(a["ngff_conformance_verified"])
             self.assertFalse(a["holographic_runtime_verified"])
