@@ -1,7 +1,6 @@
 """Synthetic, dependency-free multiscale spatial integrity tests."""
 from __future__ import annotations
 
-import copy
 import hashlib
 import json
 import subprocess
@@ -106,6 +105,31 @@ class MultiscaleGeometryTests(unittest.TestCase):
                 p.write_bytes(payload)
                 with self.subTest(payload=payload), self.assertRaises(GeometryError):
                     read_manifest(p)
+
+    def test_large_world_scale_drift_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            x = fixture(root)
+            for idx, scale in enumerate((500_000_000.0, 1_000_000_000.0)):
+                x["levels"][idx]["scale_um"] = [scale] * 3
+            audit_multiscale_geometry(x, root)
+            # The old 1e-12 relative tolerance admitted this 0.001 um
+            # world-bound drift because the baseline extent is 2e9 um.
+            x["levels"][1]["scale_um"][0] -= 0.0005
+            with self.assertRaisesRegex(GeometryError, "INCONSISTENT_DOWNSAMPLE_SCALE"):
+                audit_multiscale_geometry(x, root)
+
+    def test_large_world_origin_drift_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            x = fixture(root)
+            for level in x["levels"]:
+                level["translation_um"] = [750_000_000.0] * 3
+            audit_multiscale_geometry(x, root)
+            # Old rel_tol accepted a 0.0005 um origin shift at 1e9.
+            x["levels"][1]["translation_um"][1] += 0.0005
+            with self.assertRaisesRegex(GeometryError, "WORLD_BOUNDS_MISMATCH"):
+                audit_multiscale_geometry(x, root)
 
     def test_cli_denies_bad_manifest_without_writing_anything(self):
         with tempfile.TemporaryDirectory() as d:

@@ -99,6 +99,19 @@ def _numbers(value: Any, *, positive: bool) -> tuple[float, float, float]:
     return tuple(converted)
 
 
+def _roundoff_close(observed: float, expected: float) -> bool:
+    """Permit only a few float ULPs, not relative physical-coordinate drift.
+
+    Relative tolerance at 1e9-1e12 um can silently accept micron-scale
+    inconsistencies.  Four ULPs cover arithmetic rounding of declared
+    floats, without widening the envelope as a fixed relative fraction.
+    """
+    return math.isclose(
+        observed, expected, rel_tol=0.0,
+        abs_tol=max(1e-12, 4 * max(math.ulp(observed), math.ulp(expected))),
+    )
+
+
 def audit_multiscale_geometry(manifest: dict[str, Any], root: Path) -> dict[str, Any]:
     """Verify declared ZYX micrometre geometry + SHA of bounded raw bytes.
 
@@ -168,10 +181,10 @@ def audit_multiscale_geometry(manifest: dict[str, Any], root: Path) -> dict[str,
             # Each level is an integer-grid downsample from its predecessor.
             if any(previous_shape[i] % shape[i] != 0 or previous_shape[i] <= shape[i] for i in range(3)):
                 raise GeometryError("INCONSISTENT_DOWNSAMPLE_SHAPE")
-            if any(not math.isclose(scale[i], previous_scale[i] * previous_shape[i] / shape[i], rel_tol=1e-12, abs_tol=1e-12)
+            if any(not _roundoff_close(scale[i], previous_scale[i] * previous_shape[i] / shape[i])
                    for i in range(3)):
                 raise GeometryError("INCONSISTENT_DOWNSAMPLE_SCALE")
-            if any(not math.isclose(box[i][j], world_box[i][j], rel_tol=1e-12, abs_tol=1e-12)
+            if any(not _roundoff_close(box[i][j], world_box[i][j])
                    for i in range(3) for j in (0, 1)):
                 raise GeometryError("WORLD_BOUNDS_MISMATCH")
         proof.append({
